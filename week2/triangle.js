@@ -1,13 +1,14 @@
 // --------------------------------------------
 // Driver Code
 //
-let numPoints = 50000;
 window.onload = init;
 
 function init() {
   const { canvas, gl } = getCanvasContext("gl-canvas");
-  const points = getGasketPoints();
-  sendPointsToWebGl(canvas, gl, points);
+  // const points = getGasketPoints();
+  const pts = getTrianglePoints();
+  console.log(pts);
+  sendPointsToWebGl(canvas, gl, pts);
 }
 
 // --------------------------------------------
@@ -24,25 +25,16 @@ function getCanvasContext(id) {
 }
 
 // --------------------------------------------
-// Gasket Builder
+// Triangle Builder
 //
-function getGasketPoints() {
-  //
-  //  Initialize our data for the Sierpinski Gasket
-  //
-  let vertices = getInitialTriangle();
-
-  // And, add our initial point into our array of points
-  let initPoint = getInitialPoint(vertices);
-  points = [initPoint];
-
-  // Compute new points
-  // Each new point is located midway between
-  // last point and a randomly chosen vertex
-  let gasketPoints = getRandomGasketPoints(vertices, numPoints, initPoint);
-  points = [...points, ...gasketPoints];
-
-  return points;
+function getTrianglePoints() {
+  let pt1 = vec2(0.0, 0.0);
+  let pt2 = vec2(0.0, 1.0);
+  let pt3 = vec2(1.0, 1.0);
+  let pt1a = vec2(mix(pt2, pt3, 0.5));
+  let pt4 = vec2(1.0, 0.0);
+  pts = [pt1, pt1a, pt4, pt1];
+  return pts;
 }
 
 // --------------------------------------------
@@ -64,38 +56,7 @@ function sendPointsToWebGl(canvas, gl, points) {
   // Associate our shader variables with our data buffer
   associateShaderToDataBuffer(gl, program);
 
-  render(gl);
-}
-
-// --------------------------------------------
-// Gasket Builder - Helper functions
-//
-function getInitialTriangle() {
-  // First, initialize the corners of our gasket with three points.
-  let vertices = [vec2(-1, -1), vec2(0, 1), vec2(1, -1)];
-  return vertices;
-}
-
-function getInitialPoint(vertices) {
-  // Specify a starting point p for our iterations
-  // p must lie inside any set of three vertices
-
-  let u = add(vertices[0], vertices[1]);
-  let v = add(vertices[0], vertices[2]);
-  let p = scale(0.25, add(u, v));
-
-  return p;
-}
-
-function getRandomGasketPoints(vertices, numPoints, initPoint) {
-  let points = [initPoint];
-  for (let i = 0; i < numPoints; i++) {
-    let j = Math.floor(Math.random() * 3);
-    p = add(points[i], vertices[j]);
-    p = scale(0.5, p);
-    points.push(p);
-  }
-  return points;
+  render(gl, points);
 }
 
 // --------------------------------------------
@@ -118,7 +79,9 @@ function associateShaderToDataBuffer(gl, program) {
   gl.enableVertexAttribArray(vPosition);
 }
 
-function render(gl) {
+function render(gl, points) {
+  console.log("----points.length");
+  console.log(points.length);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.POINTS, 0, points.length);
+  gl.drawArrays(gl.LINE_STRIP, 0, points.length);
 }

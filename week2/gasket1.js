@@ -61,7 +61,7 @@ function sendPointsToWebGl(canvas, gl, points) {
   // Associate our shader variables with our data buffer
   associateShaderToDataBuffer(gl, program);
 
-  render(gl);
+  render(gl, points);
 }
 
 // --------------------------------------------
@@ -115,7 +115,7 @@ function associateShaderToDataBuffer(gl, program) {
   gl.enableVertexAttribArray(vPosition);
 }
 
-function render(gl) {
+function render(gl, points) {
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.POINTS, 0, points.length);
 }
