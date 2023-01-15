@@ -1,4 +1,4 @@
-let numPoints = 50000;
+let numPoints = 500;
 window.onload = init;
 
 function init() {

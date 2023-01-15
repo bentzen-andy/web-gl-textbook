@@ -5,9 +5,17 @@ window.onload = main;
 
 function main() {
   const { canvas, gl } = getCanvasContext("gl-canvas");
-  const pt1 = vec2(0.0, 0.0);
-  const pt2 = vec2(0.5, -0.5);
+  const { pt1, pt2 } = getPoints();
   drawLine(canvas, gl, pt1, pt2);
+}
+
+function getPoints() {
+  let pt1, pt2;
+  if (!pt1 && !pt2) {
+    pt1 = vec2(0.0, 0.0);
+    pt2 = vec2(0.5, -0.5);
+  }
+  return { pt1, pt2 };
 }
 
 function drawLine(canvas, gl, pt1, pt2) {
