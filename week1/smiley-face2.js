@@ -130,6 +130,14 @@ function getArcMidPoint(endpoint1, endpoint2, arcCenter) {
   return [midPoint.x, midPoint.y];
 }
 
+/*
+ * arcPointRight: 2D point - end point of the arc
+ * arcPointLeft: 2D point - end point of the arc (assuming it runs
+ *  clockwise from arcPointRight)
+ * arcCenter: 2D point
+ * levelOfDetail - int - number of subdivision passes to run on the
+ *  arc to create points
+ */
 function getArcPoints(arcPointRight, arcPointLeft, arcCenter, levelOfDetail) {
   let currArcPoints = [arcPointRight, arcPointLeft];
   let buf = [];
@@ -159,6 +167,12 @@ function subDivideArc(currArcPoints, arcCenter, i) {
   return newArcPoints;
 }
 
+/*
+ * circlePoint0Deg: 2D point - point on the circle at 0 deg from the center.
+ * circleCenter: 2D point
+ * levelOfDetail - int - number of subdivision passes to run on the
+ *  circle to create points
+ */
 function getCirclePoints(circlePoint0Deg, circleCenter, levelOfDetail) {
   let delta = circlePoint0Deg[0] - circleCenter[0];
   let circlePoint270Deg = [circleCenter[0], circleCenter[1] + delta];
