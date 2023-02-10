@@ -1,17 +1,10 @@
 <!DOCTYPE html>
 <html>
 
-<title>Old Windows Screen Saver</title>
-
-<style>
-    body {
-    background-color: #eee;
-    }
-</style>
+<title>Rotating Square</title>
 
 <script id="vertex-shader" type="x-shader/x-vertex">
 attribute vec4 vPosition;
-uniform float delta;
 uniform float theta;
 
 void main()
@@ -21,9 +14,6 @@ void main()
 
     gl_Position.x = -s * vPosition.y + c * vPosition.x;
     gl_Position.y =  s * vPosition.x + c * vPosition.y;
-
-    gl_Position.x = gl_Position.x + delta;
-
     gl_Position.z = 0.0;
     gl_Position.w = 1.0;
 }
@@ -39,10 +29,10 @@ void main()
 }
 </script>
 
-<script type="text/javascript" src="../Common/webgl-utils.js"></script>
-<script type="text/javascript" src="../Common/initShaders.js"></script>
-<script type="text/javascript" src="../Common/MV.js"></script>
-<script type="text/javascript" src="angelScreenSaver.js"></script>
+<script type="text/javascript" src="../../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../../Common/initShaders.js"></script>
+<script type="text/javascript" src="../../Common/MV.js"></script>
+<script type="text/javascript" src="rotatingSquare2.js"></script>
 </head>
 
 <body>
