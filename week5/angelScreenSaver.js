@@ -1,191 +1,90 @@
-// --------------------------------------------
-// Driver Code
+"use strict";
+
 //
-window.onload = main;
-
-function main() {
-  const { canvas, gl } = getCanvasContext("gl-canvas");
-  const pts = getPoints();
-  sendPointsToWebGl(canvas, gl, pts);
-}
-
-function getPoints() {
-  let pts = [];
-  pts.push([-0.5, -0.5]);
-  pts.push([0.5, -0.5]);
-  pts.push([-0.5, 0.5]);
-  pts.push([0.5, 0.5]);
-
-  return pts;
-}
-
-// --------------------------------------------
-// Canvas Config.
+// Display a Mandelbrot set
 //
-function getCanvasContext(id) {
-  let canvas = document.getElementById(id);
 
-  let gl = WebGLUtils.setupWebGL(canvas);
+var canvas;
+var gl;
+
+/* default data*/
+
+/* N x M array to be generated */
+
+var scale = 0.125;
+var cx = -2.0; /* center of window in complex plane */
+var cy = -1.0;
+var max = 100; /* number of interations per point */
+
+var n = 1024;
+var m = 1024;
+
+var program;
+
+//----------------------------------------------------------------------------
+
+onload = function init() {
+  canvas = document.getElementById("gl-canvas");
+
+  gl = WebGLUtils.setupWebGL(canvas);
   if (!gl) {
     alert("WebGL isn't available");
   }
-  return { canvas, gl };
-}
 
-// --------------------------------------------
-// Web GL
-//
-function sendPointsToWebGl(canvas, gl, points) {
-  //
-  //  Configure WebGL
-  //
-  initWebGl(canvas, gl);
+  gl.viewport(0, 0, canvas.width, canvas.height);
 
-  //  Load shaders and initialize attribute buffers
-  let program = initShaders(gl, "vertex-shader", "fragment-shader");
+  // Create and initialize a buffer object
+
+  var points = [
+    vec4(0.0, 0.0, 0.0, 1.0),
+    vec4(0.0, 1.0, 0.0, 1.0),
+    vec4(1.0, 1.0, 0.0, 1.0),
+    vec4(1.0, 1.0, 0.0, 1.0),
+    vec4(1.0, 0.0, 0.0, 1.0),
+    vec4(0.0, 0.0, 0.0, 1.0),
+  ];
+
+  // Load shaders and use the resulting shader program
+
+  program = initShaders(gl, "vertex-shader", "fragment-shader");
   gl.useProgram(program);
 
-  // Load the data into the GPU
-  loadPointsToGpu(gl, points);
+  // set up vertex arrays
+  var buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  var vPosition = gl.getAttribLocation(program, "vPosition");
 
-  // Associate our shader variables with our data buffer
-  associateShaderToDataBuffer(gl, program);
-
-  render(gl, points);
-}
-
-// --------------------------------------------
-// Web GL - Helper functions
-//
-function initWebGl(canvas, gl) {
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-}
-
-function loadPointsToGpu(gl, points) {
-  let bufferId = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
-}
-
-function associateShaderToDataBuffer(gl, program) {
-  let vPosition = gl.getAttribLocation(program, "vPosition");
-  gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
-}
+  gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
 
-function render(gl, points) {
+  gl.uniform1f(gl.getUniformLocation(program, "scale"), scale);
+  gl.uniform1f(gl.getUniformLocation(program, "cx"), cx);
+  gl.uniform1f(gl.getUniformLocation(program, "cy"), cy);
+
+  document.getElementById("Center X").onchange = function (event) {
+    cx = event.target.value;
+    gl.uniform1f(gl.getUniformLocation(program, "cx"), cx);
+  };
+  document.getElementById("Center Y").onchange = function (event) {
+    cy = event.target.value;
+    gl.uniform1f(gl.getUniformLocation(program, "cy"), cy);
+  };
+  document.getElementById("Size").onchange = function (event) {
+    scale = 1.0 / event.target.value;
+    gl.uniform1f(gl.getUniformLocation(program, "scale"), scale);
+  };
+
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  render();
+};
+
+//----------------------------------------------------------------------------
+
+var render = function () {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, points.length);
-}
-
-// --------------------------------------------
-// Math - Helper functions
-//
-function getArcMidPoint(endpoint1, endpoint2, arcCenter) {
-  const A = { x: endpoint1[0], y: endpoint1[1] };
-  const B = { x: endpoint2[0], y: endpoint2[1] };
-  const C = { x: arcCenter[0], y: arcCenter[1] };
-
-  // get A and B as vectors relative to C
-  const vA = { x: A.x - C.x, y: A.y - C.y };
-  const vB = { x: B.x - C.x, y: B.y - C.y };
-
-  // angle between A and B
-  const angle = Math.atan2(vA.y, vA.x) - Math.atan2(vB.y, vB.x);
-
-  // half of that
-  const half = angle / 2;
-
-  // rotate point B by half of the angle
-  const s = Math.sin(half);
-  const c = Math.cos(half);
-
-  const xnew = vB.x * c - vB.y * s;
-  const ynew = vB.x * s + vB.y * c;
-
-  // midpoint is new coords plus C
-  const midPoint = { x: xnew + C.x, y: ynew + C.y };
-
-  return [midPoint.x, midPoint.y];
-}
-
-/*
- * arcPointRight: 2D point - end point of the arc
- * arcPointLeft: 2D point - end point of the arc (assuming it runs
- *  clockwise from arcPointRight)
- * arcCenter: 2D point
- * levelOfDetail - int - number of subdivision passes to run on the
- *  arc to create points
- */
-function getArcPoints(arcPointRight, arcPointLeft, arcCenter, levelOfDetail) {
-  let currArcPoints = [arcPointRight, arcPointLeft];
-  let buf = [];
-
-  for (let j = 0; j < levelOfDetail; j++) {
-    for (let i = 0; i < currArcPoints.length; i += 2) {
-      buf = [...buf, ...subDivideArc(currArcPoints, arcCenter, i)];
-    }
-    currArcPoints = buf;
-    buf = [];
-  }
-  return currArcPoints;
-}
-
-function subDivideArc(currArcPoints, arcCenter, i) {
-  let arcPointMid = getArcMidPoint(
-    currArcPoints[i],
-    currArcPoints[i + 1],
-    arcCenter
-  );
-  let newArcPoints = [
-    currArcPoints[i],
-    arcPointMid,
-    arcPointMid,
-    currArcPoints[i + 1],
-  ];
-  return newArcPoints;
-}
-
-/*
- * circlePoint0Deg: 2D point - point on the circle at 0 deg from the center.
- * circleCenter: 2D point
- * levelOfDetail - int - number of subdivision passes to run on the
- *  circle to create points
- */
-function getCirclePoints(circlePoint0Deg, circleCenter, levelOfDetail) {
-  let delta = circlePoint0Deg[0] - circleCenter[0];
-  let circlePoint270Deg = [circleCenter[0], circleCenter[1] + delta];
-
-  let pts1 = getArcPoints(
-    circlePoint0Deg,
-    circlePoint270Deg,
-    circleCenter,
-    levelOfDetail
-  );
-
-  let pts2 = pts1.map((pt) => rotate(circleCenter, pt, d2r(90)));
-  let pts3 = pts2.map((pt) => rotate(circleCenter, pt, d2r(90)));
-  let pts4 = pts3.map((pt) => rotate(circleCenter, pt, d2r(90)));
-
-  let pts = [...pts1, ...pts2, ...pts3, ...pts4];
-
-  return pts;
-}
-
-function rotate(origin, point, angle) {
-  // Rotate a point counterclockwise by a given angle around a given origin.
-  // The angle should be given in radians.
-
-  let [ox, oy] = origin;
-  let [px, py] = point;
-
-  let qx = ox + Math.cos(angle) * (px - ox) - Math.sin(angle) * (py - oy);
-  let qy = oy + Math.sin(angle) * (px - ox) + Math.cos(angle) * (py - oy);
-  return [qx, qy];
-}
-
-function d2r(degrees) {
-  var pi = Math.PI;
-  return degrees * (pi / 180);
-}
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimFrame(render);
+};
