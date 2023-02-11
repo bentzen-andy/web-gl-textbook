@@ -12,6 +12,11 @@ class Square {
   upperRight;
   upperLeft;
 
+  velocityX;
+  velocityY;
+
+  canCheckForCollisions;
+
   constructor(lowerLeft, upperRight) {
     let width = Math.abs(upperRight[0] - lowerLeft[0]);
     this.lowerLeft = lowerLeft;
@@ -19,24 +24,78 @@ class Square {
     this.lowerRight = vec2(lowerLeft[0] + width, lowerLeft[1]);
     this.upperLeft = vec2(upperRight[0] - width, upperRight[1]);
     this.setPreviousPoints();
+    this.velocityX = 0.0;
+    this.velocityY = 0.0;
+  }
+
+  move() {
+    let pts = [
+      this.lowerLeft,
+      this.lowerRight,
+      this.upperLeft,
+      this.upperRight,
+    ];
+    pts = pts.map((pt) => [pt[0] + this.velocityX, pt[1] + this.velocityY]);
+    this.setPoints(pts[0], pts[1], pts[2], pts[3]);
   }
 
   getPoints() {
     return [this.lowerLeft, this.lowerRight, this.upperLeft, this.upperRight];
   }
 
-  move(deltaX, deltaY) {
-    let pts = this.getPoints();
-    pts = pts.map((pt) => [pt[0] + deltaX, pt[1] + deltaY]);
-    this.setPoints(pts[0], pts[1], pts[2], pts[3]);
+  getPointsForTRIANGLE_STRIP() {
+    return [this.lowerLeft, this.lowerRight, this.upperLeft, this.upperRight];
   }
 
-  getLeftBound() {
-    return this.lowerLeft[0];
+  getPointsForTRIANGLES() {
+    return [
+      this.lowerLeft,
+      this.lowerRight,
+      this.upperLeft,
+      this.lowerRight,
+      this.upperRight,
+      this.upperLeft,
+    ];
   }
 
-  getRightBound() {
-    return this.upperRight[0];
+  getVelocityX() {
+    return this.velocityX;
+  }
+
+  getVelocityY() {
+    return this.velocityY;
+  }
+
+  setVelocityX(velocityX) {
+    this.velocityX = velocityX;
+  }
+
+  setVelocityY(velocityY) {
+    this.velocityY = velocityY;
+  }
+
+  setRandomStartingVelocity(min, max) {
+    let vec = this.getRandomDirectionVector(min, max);
+    this.velocityX = vec[0];
+    this.velocityY = vec[1];
+  }
+
+  checkCollisions(otherLine) {
+    let isColliding = this.didCollideWithLine(otherLine);
+    if (isColliding) {
+      if (otherLine.isVertical()) {
+        this.velocityX = -this.velocityX;
+      } else if (otherLine.isHorizontal()) {
+        this.velocityY = -this.velocityY;
+      }
+
+      this.setPoints(
+        this.lowerLeftPrev,
+        this.lowerRightPrev,
+        this.upperRightPrev,
+        this.upperLeftPrev
+      );
+    }
   }
 
   // returns true if this square did collide with the other line entity
@@ -50,11 +109,6 @@ class Square {
     let check2 = vertexPath2.isIntersectingWith(other);
     let check3 = vertexPath3.isIntersectingWith(other);
     let check4 = vertexPath4.isIntersectingWith(other);
-
-    // console.log(check1);
-    // console.log(check2);
-    // console.log(check3);
-    // console.log(check4);
 
     return check1 || check2 || check3 || check4;
   }
@@ -72,5 +126,30 @@ class Square {
     this.lowerRightPrev = this.upperRight;
     this.upperRightPrev = this.lowerRight;
     this.upperLeftPrev = this.upperLeft;
+  }
+
+  /*
+   * Returns a random vector between some min and max
+   */
+  getRandomDirectionVector(minSpeed, maxSpeed) {
+    var random_boolean1 = Math.random() < 0.5;
+    var random_boolean2 = Math.random() < 0.5;
+    var speed = maxSpeed / 1000;
+    var rand1 = this.randomIntFromInterval(minSpeed, maxSpeed) / maxSpeed;
+    var rand2 = this.randomIntFromInterval(minSpeed, maxSpeed) / maxSpeed;
+    rand1 *= random_boolean1 ? 1 : -1;
+    rand2 *= random_boolean2 ? 1 : -1;
+    var directionX = rand1 * speed;
+    var directionY = rand2 * speed;
+
+    return vec2(directionX, directionY);
+  }
+
+  /*
+   * Rand Between
+   */
+  randomIntFromInterval(min, max) {
+    // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min);
   }
 }

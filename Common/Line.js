@@ -10,17 +10,34 @@ class Line {
     this.point2 = pt2;
   }
 
+  isHorizontal() {
+    let slope = Math.abs(Math.round(this.slope()));
+    if (slope === 0 || slope === 180) return true;
+    return false;
+  }
+
+  isVertical() {
+    // let slope = Math.abs(Math.round(this.slope()));
+    let slope = Math.abs(Math.round(this.slope()));
+    if (slope === 90 || slope === 270) return true;
+    return false;
+  }
+
+  slope() {
+    let x1 = this.point1[0];
+    let x2 = this.point2[0];
+    let y1 = this.point1[1];
+    let y2 = this.point2[1];
+
+    let slope = this.r2d(Math.atan2(y1 - y2, x1 - x2));
+    return slope;
+  }
+
+  r2d(radians) {
+    return radians * (180 / Math.PI);
+  }
+
   isIntersectingWith(that) {
-    //     console.log("----this.point1");
-    //     console.log(this.point1);
-    //     console.log("----this.point2");
-    //     console.log(this.point2);
-
-    //     console.log("----that.point1");
-    //     console.log(that.point1);
-    //     console.log("----that.point2");
-    //     console.log(that.point2);
-
     let x1 = this.point1[0];
     let y1 = this.point1[1];
     let x2 = this.point2[0];
@@ -31,8 +48,6 @@ class Line {
     let y4 = that.point2[1];
 
     let intersection = this.intersect(x1, y1, x2, y2, x3, y3, x4, y4);
-    // console.log("----intersection");
-    // console.log(intersection);
     return intersection;
   }
 

@@ -5,6 +5,7 @@
  */
 var gl;
 
+let vertices = [];
 var deltaX = 0.0;
 var deltaXLoc;
 var deltaY = 0.0;
@@ -16,24 +17,11 @@ var thetaLoc;
 var delay = 2;
 var direction = true;
 
-var directionVector = getRandomDirectionVector(5, 10);
-var directionX = directionVector[0];
-var directionY = directionVector[1];
-
 var square1;
 var wallLower = new Line(vec2(-1, -1), vec2(1, -1));
 var wallRight = new Line(vec2(1, -1), vec2(1, 1));
 var wallUpper = new Line(vec2(1, 1), vec2(-1, 1));
 var wallLeft = new Line(vec2(-1, 1), vec2(-1, -1));
-
-// console.log("wallLower");
-// console.log(wallLower);
-// console.log("wallRight");
-// console.log(wallRight);
-// console.log("wallUpper");
-// console.log(wallUpper);
-// console.log("wallLeft");
-// console.log(wallLeft);
 
 /*
  * Main Driver Code
@@ -56,12 +44,8 @@ window.onload = function init() {
   gl.useProgram(program);
 
   square1 = new Square(vec2(-0.1, -0.1), vec2(0.1, 0.1));
-  var vertices = square1.getPoints();
-
-  // var square1 = [vec2(1, 1), vec2(-1, 1), vec2(1, -1), vec2(-1, -1)];
-  // var vertices = square1;
-
-  // vertices = vertices.map((vector) => scale(0.1, vector));
+  square1.setRandomStartingVelocity(5, 10);
+  vertices = square1.getPointsForTRIANGLE_STRIP();
 
   // Load the data into the GPU
   var vBuffer = gl.createBuffer();
@@ -78,11 +62,6 @@ window.onload = function init() {
   deltaYLoc = gl.getUniformLocation(program, "deltaY");
   thetaLoc = gl.getUniformLocation(program, "theta");
 
-  // console.log("----deltaX");
-  // console.log(deltaX);
-  // console.log("----vertices");
-  // console.log(vertices);
-
   render();
 };
 
@@ -92,71 +71,23 @@ window.onload = function init() {
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // theta += direction ? 0.01 : -0.01;
   theta = 0;
-  // deltaX += direction ? 0.01 : -0.01;
-  // deltaY += direction ? 0.01 : -0.01;
-  // deltaX += direction ? directionX : -directionX;
-  // deltaY += direction ? directionY : -directionY;
-  deltaX += directionX;
-  deltaY += directionY;
+  deltaX += square1.getVelocityX();
+  deltaY += square1.getVelocityY();
 
-  // console.log("----square1 before");
-  // console.log(square1);
-  square1.move(directionX, directionY);
-
-  if (square1.didCollideWithLine(wallRight)) directionX = -Math.abs(directionX);
-  if (square1.didCollideWithLine(wallLeft)) directionX = Math.abs(directionX);
-  if (square1.didCollideWithLine(wallUpper)) directionY = -Math.abs(directionY);
-  if (square1.didCollideWithLine(wallLower)) directionY = Math.abs(directionY);
-
-  // console.log("----square1 after");
-  // console.log(square1);
+  square1.move();
+  square1.checkCollisions(wallUpper);
+  square1.checkCollisions(wallLower);
+  square1.checkCollisions(wallLeft);
+  square1.checkCollisions(wallRight);
 
   gl.uniform1f(deltaXLoc, deltaX);
   gl.uniform1f(deltaYLoc, deltaY);
   gl.uniform1f(thetaLoc, theta);
 
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertices.length);
 
   setTimeout(function () {
     requestAnimFrame(render);
   }, delay);
-}
-
-/*
- * Returns a random vector between some min and max
- */
-function getRandomDirectionVector(minSpeed, maxSpeed) {
-  var random_boolean1 = Math.random() < 0.5;
-  var random_boolean2 = Math.random() < 0.5;
-  var speed = maxSpeed / 1000;
-  var rand1 = randomIntFromInterval(minSpeed, maxSpeed) / maxSpeed;
-  var rand2 = randomIntFromInterval(minSpeed, maxSpeed) / maxSpeed;
-  rand1 *= random_boolean1 ? 1 : -1;
-  rand2 *= random_boolean2 ? 1 : -1;
-  var directionX = rand1 * speed;
-  var directionY = rand2 * speed;
-
-  // console.log("----directionX");
-  // console.log(directionX);
-  // console.log("----directionY");
-  // console.log(directionY);
-  // console.log("----sum");
-  // console.log(directionX + directionY);
-
-  return vec2(directionX, directionY);
-}
-
-/*
- * Rand Between
- */
-function randomIntFromInterval(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-function getXDirection() {
-  // console.log("----deltaX");
-  // console.log(deltaX);
 }
