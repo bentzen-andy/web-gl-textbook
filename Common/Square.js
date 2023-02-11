@@ -80,7 +80,14 @@ class Square {
     this.velocityY = vec[1];
   }
 
-  checkCollisions(otherLine) {
+  checkCollisions(otherLines) {
+    for (const otherLine of otherLines) {
+      let didCollide = this.checkCollision(otherLine);
+      if (didCollide) return;
+    }
+  }
+
+  checkCollision(otherLine) {
     let isColliding = this.didCollideWithLine(otherLine);
     if (isColliding) {
       if (otherLine.isVertical()) {
@@ -96,6 +103,7 @@ class Square {
         this.upperLeftPrev
       );
     }
+    return isColliding;
   }
 
   // returns true if this square did collide with the other line entity
